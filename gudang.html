@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lype&Co - Smart Warehouse & Financial System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-header {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(12px);
+        }
+        .gradient-card-1 { background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); }
+        .gradient-card-2 { background: linear-gradient(135deg, #059669 0%, #047857 100%); }
+        .gradient-card-3 { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+        .gradient-card-4 { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="glass-header border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-lg shadow-indigo-200 flex items-center justify-center">
+                    <i class="fa-solid fa-boxes-stacked text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-extrabold text-slate-900 leading-tight tracking-tight">Lype&Co <span class="text-indigo-600">Warehouse & Financials</span></h1>
+                    <p class="text-xs text-slate-500 font-medium">Manajemen Stok & Laporan Keuangan Gudang Professional</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span id="current-date" class="text-xs sm:text-sm font-semibold bg-white text-slate-700 px-3.5 py-1.5 rounded-xl border border-slate-200/80 shadow-sm"></span>
+                <button onclick="openModal('modal-import')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl transition shadow-md shadow-emerald-100 flex items-center space-x-2">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span class="hidden sm:inline">Export / Import Excel</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Notification Toast -->
+        <div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl transition-all duration-300 flex items-center space-x-3 border border-slate-700">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="toast-msg" class="text-sm font-medium">Berhasil menyimpan data!</span>
+        </div>
+
+        <!-- Confirm Modal for Deletion -->
+        <div id="modal-confirm" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
+                <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 id="confirm-title" class="font-bold text-slate-900 text-base">Konfirmasi Hapus</h3>
+                <p id="confirm-msg" class="text-xs text-slate-500">Apakah Anda yakin ingin menghapus item ini?</p>
+                <div class="flex space-x-3 pt-2">
+                    <button onclick="closeModal('modal-confirm')" class="w-1/2 py-2.5 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200">Batal</button>
+                    <button id="confirm-action-btn" class="w-1/2 py-2.5 rounded-xl text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-md">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex space-x-2 border-b border-slate-200/80 overflow-x-auto pb-2">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition bg-indigo-600 text-white shadow-md shadow-indigo-100 flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Ringkasan Dashboard</span>
+            </button>
+            <button onclick="switchTab('inventory')" id="tab-inventory" class="tab-btn px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition bg-white text-slate-600 hover:bg-slate-100 flex items-center space-x-2 whitespace-nowrap border border-slate-200/60">
+                <i class="fa-solid fa-box"></i>
+                <span>Stok Barang</span>
+            </button>
+            <button onclick="switchTab('transactions')" id="tab-transactions" class="tab-btn px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition bg-white text-slate-600 hover:bg-slate-100 flex items-center space-x-2 whitespace-nowrap border border-slate-200/60">
+                <i class="fa-solid fa-right-left"></i>
+                <span>Barang Masuk & Keluar</span>
+            </button>
+            <button onclick="switchTab('reports')" id="tab-reports" class="tab-btn px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition bg-white text-slate-600 hover:bg-slate-100 flex items-center space-x-2 whitespace-nowrap border border-slate-200/60">
+                <i class="fa-solid fa-receipt"></i>
+                <span>Laporan Kalender & Keuangan</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: DASHBOARD OVERVIEW -->
+        <div id="view-dashboard" class="space-y-8">
+            <!-- Stat Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="gradient-card-1 text-white p-6 rounded-3xl shadow-xl shadow-indigo-100 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-bold text-indigo-200 uppercase tracking-wider">Total Jenis Barang</p>
+                            <h3 id="stat-total-items" class="text-3xl font-black mt-1">0</h3>
+                        </div>
+                        <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                            <i class="fa-solid fa-cubes text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-indigo-100 mt-4 flex items-center space-x-1 font-medium">
+                        <i class="fa-solid fa-layer-group text-[10px]"></i>
+                        <span>Item Terdaftar di Gudang</span>
+                    </p>
+                </div>
+
+                <div class="gradient-card-2 text-white p-6 rounded-3xl shadow-xl shadow-emerald-100 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-bold text-emerald-200 uppercase tracking-wider">Total Stok Fisik</p>
+                            <h3 id="stat-total-stock" class="text-3xl font-black mt-1">0</h3>
+                        </div>
+                        <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                            <i class="fa-solid fa-box-archive text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-emerald-100 mt-4 flex items-center space-x-1 font-medium">
+                        <i class="fa-solid fa-warehouse text-[10px]"></i>
+                        <span>Unit Tersedia di Rak</span>
+                    </p>
+                </div>
+
+                <div class="gradient-card-3 text-white p-6 rounded-3xl shadow-xl shadow-blue-100 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-bold text-blue-200 uppercase tracking-wider">Masuk Hari Ini</p>
+                            <h3 id="stat-in-today" class="text-3xl font-black mt-1">0</h3>
+                        </div>
+                        <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                            <i class="fa-solid fa-arrow-down-left-and-arrow-up-right-to-center text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-blue-100 mt-4 flex items-center space-x-1 font-medium">
+                        <i class="fa-solid fa-circle-arrow-down text-[10px]"></i>
+                        <span>Inbound / Barang Masuk</span>
+                    </p>
+                </div>
+
+                <div class="gradient-card-4 text-white p-6 rounded-3xl shadow-xl shadow-amber-100 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-bold text-amber-200 uppercase tracking-wider">Keluar Hari Ini</p>
+                            <h3 id="stat-out-today" class="text-3xl font-black mt-1">0</h3>
+                        </div>
+                        <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                            <i class="fa-solid fa-truck-ramp-box text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-amber-100 mt-4 flex items-center space-x-1 font-medium">
+                        <i class="fa-solid fa-circle-arrow-up text-[10px]"></i>
+                        <span>Outbound / Barang Keluar</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Quick Action & Stock Alert Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Quick Inbound/Outbound Card -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex items-center space-x-2 border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-bolt text-amber-500"></i>
+                        <h2 class="font-bold text-slate-900 text-sm">Input Mutasi Cepat</h2>
+                    </div>
+                    <form onsubmit="handleQuickTransaction(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pilih Barang</label>
+                            <select id="quick-item-id" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                                <option value="">-- Pilih Barang --</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jenis Mutasi</label>
+                                <select id="quick-type" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                                    <option value="MASUK">BARANG MASUK</option>
+                                    <option value="KELUAR">BARANG KELUAR</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jumlah Unit</label>
+                                <input type="number" id="quick-qty" min="1" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="1" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tanggal Mutasi</label>
+                            <input type="date" id="quick-date" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Catatan / Keterangan</label>
+                            <input type="text" id="quick-notes" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Contoh: Stok Baru / Penjualan Shopee">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-md shadow-indigo-100 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-plus-circle"></i>
+                            <span>Simpan Mutasi</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Low Stock Alert Warning Panel -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                            <h2 class="font-bold text-slate-900 text-sm">Peringatan Stok Menipis (&lt; 10 Unit)</h2>
+                        </div>
+                        <span id="low-stock-count" class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">0 Barang</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 uppercase border-b border-slate-100">
+                                    <th class="py-2.5 px-3">SKU</th>
+                                    <th class="py-2.5 px-3">Nama Barang</th>
+                                    <th class="py-2.5 px-3 text-center">Stok Sisa</th>
+                                    <th class="py-2.5 px-3 text-right">Harga Satuan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="low-stock-table-body" class="divide-y divide-slate-100">
+                                <!-- Dynamic Low Stock Items -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: INVENTORY STOCK MANAGEMENT -->
+        <div id="view-inventory" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-900">Daftar Stok Master Barang Gudang</h2>
+                        <p class="text-xs text-slate-500 font-medium">Kelola seluruh item, harga satuan, dan cek ketersediaan fisik stok.</p>
+                    </div>
+                    <button onclick="openModal('modal-add-item')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-md shadow-indigo-100 flex items-center space-x-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Tambah Barang Baru</span>
+                    </button>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-between gap-3">
+                    <input type="text" id="search-inventory" onkeyup="renderInventoryTable()" placeholder="Cari SKU atau nama barang..." class="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium w-full sm:w-64 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-slate-100">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 font-bold uppercase border-b border-slate-200">
+                                <th class="py-3 px-4">SKU / Kode</th>
+                                <th class="py-3 px-4">Nama Barang</th>
+                                <th class="py-3 px-4">Kategori</th>
+                                <th class="py-3 px-4 text-right">Harga Satuan</th>
+                                <th class="py-3 px-4 text-center">Stok Tersedia</th>
+                                <th class="py-3 px-4 text-right">Total Nilai Aset</th>
+                                <th class="py-3 px-4 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-table-body" class="divide-y divide-slate-100">
+                            <!-- Dynamic Inventory Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: TRANSACTIONS HISTORY -->
+        <div id="view-transactions" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-900">Riwayat Mutasi Barang Masuk & Keluar</h2>
+                        <p class="text-xs text-slate-500 font-medium">Log lengkap pergerakan barang gudang berdasarkan tanggal.</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-slate-100">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 font-bold uppercase border-b border-slate-200">
+                                <th class="py-3 px-4">Tanggal</th>
+                                <th class="py-3 px-4">SKU</th>
+                                <th class="py-3 px-4">Nama Barang</th>
+                                <th class="py-3 px-4 text-center">Tipe Mutasi</th>
+                                <th class="py-3 px-4 text-center">Jumlah Unit</th>
+                                <th class="py-3 px-4">Catatan</th>
+                                <th class="py-3 px-4 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-table-body" class="divide-y divide-slate-100">
+                            <!-- Dynamic Transaction Logs -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: REPORTS (CALENDAR & FINANCIAL BASED) -->
+        <div id="view-reports" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-100 pb-5">
+                    <div>
+                        <h2 class="text-lg font-extrabold text-slate-900 flex items-center space-x-2">
+                            <i class="fa-solid fa-file-invoice-dollar text-indigo-600"></i>
+                            <span>Laporan Keuangan & Mutasi Gudang Lype&Co</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 font-medium">Laporan terstruktur profesional yang disesuaikan dengan format spreadsheet standar.</p>
+                    </div>
+                    <div class="flex items-center space-x-3 w-full lg:w-auto">
+                        <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition shadow-md shadow-emerald-100 flex items-center space-x-2 whitespace-nowrap">
+                            <i class="fa-solid fa-file-excel text-base"></i>
+                            <span>Download Laporan Excel (.csv)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Calendar Selection Panel -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center space-x-1.5">
+                            <i class="fa-regular fa-calendar text-indigo-600"></i>
+                            <span>Filter Tanggal Laporan Kalender</span>
+                        </span>
+                        <!-- Quick Date Presets -->
+                        <div class="flex flex-wrap gap-1.5">
+                            <button onclick="setReportPreset('today')" class="px-3 py-1 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition shadow-sm">Hari Ini</button>
+                            <button onclick="setReportPreset('yesterday')" class="px-3 py-1 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition shadow-sm">Kemarin</button>
+                            <button onclick="setReportPreset('last7')" class="px-3 py-1 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition shadow-sm">7 Hari Terakhir</button>
+                            <button onclick="setReportPreset('thisMonth')" class="px-3 py-1 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition shadow-sm">Bulan Ini</button>
+                            <button onclick="setReportPreset('thisYear')" class="px-3 py-1 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition shadow-sm">Tahun Ini</button>
+                            <button onclick="setReportPreset('all')" class="px-3 py-1 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition shadow-sm">Semua Waktu</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Dari Tanggal Kalender</label>
+                            <input type="date" id="report-date-start" onchange="generateReport()" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Sampai Tanggal Kalender</label>
+                            <input type="date" id="report-date-end" onchange="generateReport()" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="generateReport()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-md shadow-indigo-100 flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-filter"></i>
+                                <span>Terapkan Periode Tanggal</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Executive Summary Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nilai Barang Diterima (Inbound)</p>
+                        <h3 id="rep-val-in" class="text-xl font-black text-blue-600 mt-1">Rp 0</h3>
+                        <p id="rep-total-in" class="text-xs text-slate-500 mt-1 font-semibold">0 Unit Diterima</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nilai Barang Dikirim (Outbound)</p>
+                        <h3 id="rep-val-out" class="text-xl font-black text-amber-600 mt-1">Rp 0</h3>
+                        <p id="rep-total-out" class="text-xs text-slate-500 mt-1 font-semibold">0 Unit Dikirim</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Net Mutasi Valuation</p>
+                        <h3 id="rep-net-val" class="text-xl font-black text-emerald-600 mt-1">Rp 0</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-semibold">Nilai Diterima - Nilai Dikirim</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Nilai Asset Saat Ini</p>
+                        <h3 id="rep-total-asset" class="text-xl font-black text-indigo-600 mt-1">Rp 0</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-semibold">Total Aset Stok Tersedia</p>
+                    </div>
+                </div>
+
+                <!-- Spreadsheet Format Preview Table (Matching Sample Image Layout) -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex items-center justify-between">
+                        <span id="report-range-label" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100"></span>
+                    </div>
+
+                    <!-- Yellow Spreadsheet Header Banner -->
+                    <div class="bg-yellow-300 text-amber-950 font-bold px-4 py-3 rounded-t-xl text-center text-sm border-t border-x border-yellow-400 tracking-wide uppercase shadow-inner" id="excel-header-banner">
+                        Laporan Stok & Keuangan Barang Gudang Lype&Co
+                    </div>
+
+                    <div class="overflow-x-auto rounded-b-xl border border-slate-200 -mt-3 shadow-sm">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-blue-100 text-blue-950 border-b border-blue-200 text-xs uppercase font-bold">
+                                    <th class="py-3 px-3 border-r border-blue-200 text-center w-12">No.</th>
+                                    <th class="py-3 px-4 border-r border-blue-200">Nama Barang</th>
+                                    <th class="py-3 px-3 border-r border-blue-200 font-mono text-center">SKU</th>
+                                    <th class="py-3 px-3 border-r border-blue-200 text-right">Harga Satuan</th>
+                                    <th class="py-3 px-3 border-r border-blue-200 text-center bg-blue-200/60">Jumlah Tersedia</th>
+                                    <th class="py-3 px-3 border-r border-blue-200 text-center">Jumlah Diterima</th>
+                                    <th class="py-3 px-3 border-r border-blue-200 text-center">Jumlah Dikirim</th>
+                                    <th class="py-3 px-4 text-right">Total Nilai Asset</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-table-body" class="text-sm divide-y divide-slate-200 bg-white">
+                                <!-- Dynamic Spreadsheet Styled Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Add Item -->
+    <div id="modal-add-item" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Tambah Barang Baru - Lype&Co</h3>
+                <button onclick="closeModal('modal-add-item')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddItem(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Kode SKU / Barcode</label>
+                    <input type="text" id="new-sku" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none uppercase" placeholder="Contoh: LIP SERUM" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nama Barang</label>
+                    <input type="text" id="new-name" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Contoh: L'Essenspial" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Kategori</label>
+                    <input type="text" id="new-cat" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Contoh: Kecantikan" required>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Stok Awal</label>
+                        <input type="number" id="new-stock" min="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="0" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Harga Satuan (Rp)</label>
+                        <input type="number" id="new-price" min="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="289000" required>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeModal('modal-add-item')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">Batal</button>
+                    <button type="submit" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100">Simpan Barang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Excel / CSV Import & Export -->
+    <div id="modal-import" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                    <span>Pusat Export/Import Laporan Financial</span>
+                </h3>
+                <button onclick="closeModal('modal-import')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-600">
+                <p>Unduh laporan keuangan tersusun rapi atau impor data master dari Excel/Google Sheets.</p>
+                
+                <div class="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl space-y-3">
+                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">1. Export Laporan Keuangan Terstruktur (.CSV)</h4>
+                    <p class="text-xs text-slate-500">Hasil ekspor dilengkapi header formal, neraca ringkasan finansial, nilai aset stok, dan log transaksi terperinci.</p>
+                    <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition flex items-center space-x-2">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download Laporan Keuangan (.csv)</span>
+                    </button>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl space-y-3">
+                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">2. Import dari File CSV Master</h4>
+                    <p class="text-xs text-slate-500">Upload file CSV master stok untuk memperbarui data gudang secara otomatis.</p>
+                    <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                    <button onclick="handleCSVImport()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition flex items-center space-x-2">
+                        <i class="fa-solid fa-upload"></i>
+                        <span>Proses & Sinkronkan</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Default Sample Item as requested earlier (LIP SERUM / L'Essenspial / Rp 289.000)
+        let inventory = [
+            { id: '1', sku: 'LIP SERUM', name: 'L\'Essenspial', category: 'Kecantikan', stock: 100, price: 289000 }
+        ];
+        let transactions = [];
+
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        // UI Helpers
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = msg;
+            if (isError) {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-lg';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+            }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // Navigation Tabs
+        function switchTab(tab) {
+            ['dashboard', 'inventory', 'transactions', 'reports'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) {
+                    btn.className = "tab-btn px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60 whitespace-nowrap";
+                }
+            });
+
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition bg-indigo-600 text-white shadow-md shadow-indigo-100 whitespace-nowrap";
+            }
+
+            if (tab === 'reports') generateReport();
+        }
+
+        // Preset Calendar Dates
+        function setReportPreset(preset) {
+            const now = new Date();
+            let start = '', end = '';
+
+            if (preset === 'today') {
+                start = end = todayStr;
+            } else if (preset === 'yesterday') {
+                const y = new Date(now);
+                y.setDate(y.getDate() - 1);
+                start = end = y.toISOString().split('T')[0];
+            } else if (preset === 'last7') {
+                const l7 = new Date(now);
+                l7.setDate(l7.getDate() - 6);
+                start = l7.toISOString().split('T')[0];
+                end = todayStr;
+            } else if (preset === 'thisMonth') {
+                start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                end = todayStr;
+            } else if (preset === 'thisYear') {
+                start = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                end = todayStr;
+            } else if (preset === 'all') {
+                start = '';
+                end = '';
+            }
+
+            document.getElementById('report-date-start').value = start;
+            document.getElementById('report-date-end').value = end;
+            generateReport();
+        }
+
+        // Refresh Data Tables and Select Options
+        function refreshAll() {
+            renderDashboardStats();
+            renderLowStockTable();
+            renderInventoryTable();
+            renderTransactionsTable();
+            populateQuickSelect();
+        }
+
+        function renderDashboardStats() {
+            document.getElementById('stat-total-items').innerText = inventory.length;
+            const totalStock = inventory.reduce((acc, item) => acc + item.stock, 0);
+            document.getElementById('stat-total-stock').innerText = totalStock.toLocaleString('id-ID');
+
+            const inToday = transactions.filter(t => t.type === 'MASUK' && t.date === todayStr).reduce((acc, t) => acc + t.qty, 0);
+            const outToday = transactions.filter(t => t.type === 'KELUAR' && t.date === todayStr).reduce((acc, t) => acc + t.qty, 0);
+
+            document.getElementById('stat-in-today').innerText = inToday.toLocaleString('id-ID');
+            document.getElementById('stat-out-today').innerText = outToday.toLocaleString('id-ID');
+        }
+
+        function renderLowStockTable() {
+            const lowItems = inventory.filter(i => i.stock < 10);
+            document.getElementById('low-stock-count').innerText = `${lowItems.length} Barang`;
+
+            const tbody = document.getElementById('low-stock-table-body');
+            if (lowItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400 italic">Semua stok barang aman di atas 10 unit.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = lowItems.map(i => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-2.5 px-3 font-mono text-slate-600 font-bold">${i.sku}</td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-800">${i.name}</td>
+                    <td class="py-2.5 px-3 text-center"><span class="bg-rose-100 text-rose-700 font-extrabold px-2 py-0.5 rounded-full">${i.stock}</span></td>
+                    <td class="py-2.5 px-3 text-right font-medium text-slate-600">Rp ${i.price.toLocaleString('id-ID')}</td>
+                </tr>
+            `).join('');
+        }
+
+        function populateQuickSelect() {
+            const select = document.getElementById('quick-item-id');
+            select.innerHTML = '<option value="">-- Pilih Barang --</option>' + 
+                inventory.map(i => `<option value="${i.id}">${i.sku} - ${i.name} (Stok: ${i.stock})</option>`).join('');
+        }
+
+        function renderInventoryTable() {
+            const query = document.getElementById('search-inventory').value.toLowerCase();
+            const filtered = inventory.filter(i => i.sku.toLowerCase().includes(query) || i.name.toLowerCase().includes(query));
+            const tbody = document.getElementById('inventory-table-body');
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 italic">Belum ada barang terdaftar.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(i => `
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                    <td class="py-3 px-4 font-mono font-bold text-indigo-600">${i.sku}</td>
+                    <td class="py-3 px-4 font-bold text-slate-800">${i.name}</td>
+                    <td class="py-3 px-4 text-slate-500 font-medium">${i.category}</td>
+                    <td class="py-3 px-4 text-right font-semibold text-slate-700">Rp ${i.price.toLocaleString('id-ID')}</td>
+                    <td class="py-3 px-4 text-center font-extrabold ${i.stock < 10 ? 'text-rose-600' : 'text-slate-800'}">${i.stock}</td>
+                    <td class="py-3 px-4 text-right font-bold text-indigo-700">Rp ${(i.stock * i.price).toLocaleString('id-ID')}</td>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="confirmDeleteItem('${i.id}')" class="text-rose-500 hover:text-rose-700 bg-rose-50 p-2 rounded-xl transition" title="Hapus Barang">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderTransactionsTable() {
+            const tbody = document.getElementById('transactions-table-body');
+            if (transactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 italic">Belum ada riwayat transaksi barang masuk/keluar.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = [...transactions].reverse().map(t => {
+                const item = inventory.find(i => i.id === t.itemId);
+                const isMasuk = t.type === 'MASUK';
+                return `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                        <td class="py-3 px-4 font-medium text-slate-600">${t.date}</td>
+                        <td class="py-3 px-4 font-mono font-semibold text-slate-500">${item ? item.sku : '-'}</td>
+                        <td class="py-3 px-4 font-bold text-slate-800">${item ? item.name : 'Barang Terhapus'}</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold ${isMasuk ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                                ${isMasuk ? 'BARANG MASUK' : 'BARANG KELUAR'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-center font-extrabold ${isMasuk ? 'text-emerald-600' : 'text-amber-600'}">${isMasuk ? '+' : '-'}${t.qty}</td>
+                        <td class="py-3 px-4 text-slate-500 italic text-xs">${t.notes || '-'}</td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="confirmDeleteTransaction('${t.id}')" class="text-rose-500 hover:text-rose-700 bg-rose-50 p-2 rounded-xl transition" title="Hapus Mutasi">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Operations Logic
+        function handleAddItem(e) {
+            e.preventDefault();
+            const sku = document.getElementById('new-sku').value.trim().toUpperCase();
+            const name = document.getElementById('new-name').value.trim();
+            const category = document.getElementById('new-cat').value.trim();
+            const stock = parseInt(document.getElementById('new-stock').value) || 0;
+            const price = parseInt(document.getElementById('new-price').value) || 0;
+
+            if (inventory.some(i => i.sku === sku)) {
+                showToast("SKU sudah terdaftar!", true);
+                return;
+            }
+
+            const newItem = { id: String(Date.now()), sku, name, category, stock, price };
+            inventory.push(newItem);
+
+            closeModal('modal-add-item');
+            e.target.reset();
+            refreshAll();
+            showToast("Barang berhasil ditambahkan!");
+        }
+
+        function handleQuickTransaction(e) {
+            e.preventDefault();
+            const itemId = document.getElementById('quick-item-id').value;
+            const type = document.getElementById('quick-type').value;
+            const qty = parseInt(document.getElementById('quick-qty').value) || 0;
+            const date = document.getElementById('quick-date').value || todayStr;
+            const notes = document.getElementById('quick-notes').value.trim();
+
+            const item = inventory.find(i => i.id === itemId);
+            if (!item) {
+                showToast("Pilih barang terlebih dahulu!", true);
+                return;
+            }
+
+            if (type === 'KELUAR' && item.stock < qty) {
+                showToast(`Stok tidak mencukupi! (Sisa: ${item.stock})`, true);
+                return;
+            }
+
+            if (type === 'MASUK') item.stock += qty;
+            else item.stock -= qty;
+
+            transactions.push({ id: String(Date.now()), itemId, type, qty, date, notes, price: item.price });
+
+            document.getElementById('quick-qty').value = '';
+            document.getElementById('quick-notes').value = '';
+            refreshAll();
+            showToast(`Berhasil mencatat mutasi ${type.toLowerCase()}!`);
+        }
+
+        function confirmDeleteItem(id) {
+            const btn = document.getElementById('confirm-action-btn');
+            document.getElementById('confirm-title').innerText = "Hapus Barang Master";
+            document.getElementById('confirm-msg').innerText = "Menghapus barang ini akan menghapus data dari tabel stok master.";
+            btn.onclick = function() {
+                inventory = inventory.filter(i => i.id !== id);
+                closeModal('modal-confirm');
+                refreshAll();
+                showToast("Barang berhasil dihapus!");
+            };
+            openModal('modal-confirm');
+        }
+
+        function confirmDeleteTransaction(id) {
+            const btn = document.getElementById('confirm-action-btn');
+            document.getElementById('confirm-title').innerText = "Hapus Riwayat Mutasi";
+            document.getElementById('confirm-msg').innerText = "Menghapus transaksi ini akan mengembalikan jumlah stok ke keadaan sebelumnya.";
+            btn.onclick = function() {
+                const tx = transactions.find(t => t.id === id);
+                if (tx) {
+                    const item = inventory.find(i => i.id === tx.itemId);
+                    if (item) {
+                        if (tx.type === 'MASUK') item.stock = Math.max(0, item.stock - tx.qty);
+                        else item.stock += tx.qty;
+                    }
+                    transactions = transactions.filter(t => t.id !== id);
+                }
+                closeModal('modal-confirm');
+                refreshAll();
+                showToast("Mutasi dihapus & stok dikembalikan!");
+            };
+            openModal('modal-confirm');
+        }
+
+        // Calendar-based Financial Reports Generation
+        function generateReport() {
+            const startDate = document.getElementById('report-date-start').value;
+            const endDate = document.getElementById('report-date-end').value;
+            const rangeLabel = document.getElementById('report-range-label');
+            const excelBanner = document.getElementById('excel-header-banner');
+
+            let filteredTx = transactions;
+            let periodText = 'Semua Waktu';
+
+            if(startDate && endDate) {
+                periodText = `Periode Tanggal ${startDate} s/d ${endDate}`;
+                filteredTx = transactions.filter(t => t.date >= startDate && t.date <= endDate);
+            } else if(startDate) {
+                periodText = `Periode Tanggal Mulai ${startDate}`;
+                filteredTx = transactions.filter(t => t.date >= startDate);
+            } else if(endDate) {
+                periodText = `Periode Sampai Tanggal ${endDate}`;
+                filteredTx = transactions.filter(t => t.date <= endDate);
+            }
+
+            rangeLabel.innerText = `Range Filter: ${periodText}`;
+            if (excelBanner) {
+                excelBanner.innerText = `Laporan Stok & Keuangan Barang Gudang Lype&Co - ${periodText}`;
+            }
+
+            const totalInQty = filteredTx.filter(t => t.type === 'MASUK').reduce((acc, t) => acc + t.qty, 0);
+            const totalOutQty = filteredTx.filter(t => t.type === 'KELUAR').reduce((acc, t) => acc + t.qty, 0);
+
+            let valIn = 0;
+            let valOut = 0;
+
+            filteredTx.forEach(t => {
+                const item = inventory.find(i => i.id === t.itemId);
+                const itemPrice = item ? item.price : (t.price || 0);
+                if(t.type === 'MASUK') {
+                    valIn += (t.qty * itemPrice);
+                } else {
+                    valOut += (t.qty * itemPrice);
+                }
+            });
+
+            const netVal = valIn - valOut;
+            const grandAssetVal = inventory.reduce((acc, item) => acc + (item.stock * item.price), 0);
+
+            document.getElementById('rep-total-in').innerText = `${totalInQty.toLocaleString('id-ID')} Unit Diterima`;
+            document.getElementById('rep-total-out').innerText = `${totalOutQty.toLocaleString('id-ID')} Unit Dikirim`;
+            document.getElementById('rep-val-in').innerText = `Rp ${valIn.toLocaleString('id-ID')}`;
+            document.getElementById('rep-val-out').innerText = `Rp ${valOut.toLocaleString('id-ID')}`;
+            document.getElementById('rep-net-val').innerText = `Rp ${netVal.toLocaleString('id-ID')}`;
+            document.getElementById('rep-total-asset').innerText = `Rp ${grandAssetVal.toLocaleString('id-ID')}`;
+
+            const summaryMap = {};
+            inventory.forEach(item => {
+                summaryMap[item.id] = { 
+                    name: item.name, 
+                    sku: item.sku, 
+                    stock: item.stock, 
+                    in: 0, 
+                    out: 0, 
+                    price: item.price 
+                };
+            });
+
+            filteredTx.forEach(t => {
+                if(summaryMap[t.itemId]) {
+                    if(t.type === 'MASUK') summaryMap[t.itemId].in += t.qty;
+                    else summaryMap[t.itemId].out += t.qty;
+                }
+            });
+
+            const tbody = document.getElementById('report-table-body');
+            const summaryArr = Object.values(summaryMap);
+
+            if(summaryArr.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400 italic">Belum ada data barang terdaftar di dalam sistem.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = summaryArr.map((s, idx) => {
+                const totalValItem = s.stock * s.price;
+
+                return `
+                    <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                        <td class="py-3 px-3 text-center border-r border-slate-100 font-semibold text-slate-500">${idx + 1}</td>
+                        <td class="py-3 px-4 border-r border-slate-100 font-bold text-slate-800">${s.name}</td>
+                        <td class="py-3 px-3 border-r border-slate-100 font-mono text-center text-xs font-semibold text-slate-500">${s.sku}</td>
+                        <td class="py-3 px-3 border-r border-slate-100 text-right font-medium text-slate-600">Rp ${s.price.toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-3 border-r border-slate-100 text-center font-bold text-slate-900 bg-slate-50">${s.stock}</td>
+                        <td class="py-3 px-3 border-r border-slate-100 text-center font-bold text-blue-600">${s.in}</td>
+                        <td class="py-3 px-3 border-r border-slate-100 text-center font-bold text-amber-600">${s.out}</td>
+                        <td class="py-3 px-4 text-right font-bold text-indigo-700">Rp ${totalValItem.toLocaleString('id-ID')}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Export to Neat & Organized Excel Spreadsheet (.CSV)
+        function exportToExcel() {
+            const startDate = document.getElementById('report-date-start').value || 'Semua Waktu';
+            const endDate = document.getElementById('report-date-end').value || 'Semua Waktu';
+            const periodStr = (startDate === 'Semua Waktu' && endDate === 'Semua Waktu') ? 'Semua Waktu' : `${startDate} s/d ${endDate}`;
+
+            let csv = "\uFEFF"; // UTF-8 BOM for proper Excel decoding
+            
+            // Spreadsheet Highlighted Title Bar
+            csv += `Laporan Stok Barang Gudang Lype&Co Periode ${periodStr}\r\n\r\n`;
+
+            // Table Column Headers
+            csv += "No.,Nama Barang,SKU,Harga Satuan (Rp),Jumlah Tersedia,Jumlah Diterima,Jumlah Dikirim,Total Nilai Asset (Rp)\r\n";
+
+            // Filter Transactions by Calendar Range
+            let filteredTx = transactions;
+            if(startDate !== 'Semua Waktu' && endDate !== 'Semua Waktu') {
+                filteredTx = transactions.filter(t => t.date >= startDate && t.date <= endDate);
+            }
+
+            const summaryMap = {};
+            inventory.forEach(item => {
+                summaryMap[item.id] = { 
+                    name: item.name, 
+                    sku: item.sku, 
+                    stock: item.stock, 
+                    in: 0, 
+                    out: 0, 
+                    price: item.price 
+                };
+            });
+
+            filteredTx.forEach(t => {
+                if(summaryMap[t.itemId]) {
+                    if(t.type === 'MASUK') summaryMap[t.itemId].in += t.qty;
+                    else summaryMap[t.itemId].out += t.qty;
+                }
+            });
+
+            const summaryArr = Object.values(summaryMap);
+            let grandAssetVal = 0;
+
+            summaryArr.forEach((s, idx) => {
+                const totalAsset = s.stock * s.price;
+                grandAssetVal += totalAsset;
+                csv += `${idx + 1},"${s.name}","${s.sku}",${s.price},${s.stock},${s.in},${s.out},${totalAsset}\r\n`;
+            });
+
+            csv += `,,,,,TOTAL ASSET,,${grandAssetVal}\r\n`;
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Laporan_Stok_Gudang_LypeCo_${startDate}_sd_${endDate}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("Laporan Excel/CSV Lype&Co berhasil di-export!");
+            closeModal('modal-import');
+        }
+
+        // Import CSV Handler
+        function handleCSVImport() {
+            const fileInput = document.getElementById('csv-file-input');
+            if(fileInput.files.length === 0) {
+                showToast("Pilih file CSV terlebih dahulu!", true);
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                let count = 0;
+                
+                for(let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if(!line || line.startsWith('Laporan') || line.startsWith('No.') || line.startsWith('TOTAL')) continue;
+                    
+                    const cols = line.split(',').map(c => c.replace(/^"|"$/g, ''));
+                    if(cols.length >= 5) {
+                        const name = cols[1];
+                        const sku = cols[2];
+                        const price = parseInt(cols[3]) || 0;
+                        const stock = parseInt(cols[4]) || 0;
+
+                        if(!sku || !name) continue;
+
+                        const existing = inventory.find(item => item.sku === sku);
+                        if(existing) {
+                            existing.stock = stock;
+                            existing.price = price;
+                        } else {
+                            inventory.push({ id: String(Date.now() + i), sku, name, category: 'Umum', stock, price });
+                        }
+                        count++;
+                    }
+                }
+
+                refreshAll();
+                closeModal('modal-import');
+                showToast(`Berhasil menyinkronkan ${count} data barang ke Lype&Co!`);
+            };
+            reader.readAsText(file);
+        }
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            document.getElementById('quick-date').value = todayStr;
+            refreshAll();
+        };
+    </script>
+</body>
+</html>
