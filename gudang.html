@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Google Font Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -277,6 +278,14 @@
                         <h2 class="text-base font-extrabold text-slate-900">Riwayat Mutasi Barang Masuk & Keluar</h2>
                         <p class="text-xs text-slate-500 font-medium">Log lengkap pergerakan barang gudang berdasarkan tanggal.</p>
                     </div>
+                    <div class="w-full sm:w-56">
+                        <label for="transaction-type-filter" class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Lihat Transaksi</label>
+                        <select id="transaction-type-filter" onchange="renderTransactionsTable()" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="SEMUA">Barang Masuk & Keluar</option>
+                            <option value="MASUK">Barang Masuk</option>
+                            <option value="KELUAR">Barang Keluar</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto rounded-2xl border border-slate-100">
@@ -314,7 +323,7 @@
                     <div class="flex items-center space-x-3 w-full lg:w-auto">
                         <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition shadow-md shadow-emerald-100 flex items-center space-x-2 whitespace-nowrap">
                             <i class="fa-solid fa-file-excel text-base"></i>
-                            <span>Download Laporan Excel (.csv)</span>
+                            <span>Download Laporan Excel (.xlsx)</span>
                         </button>
                     </div>
                 </div>
@@ -337,7 +346,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
                         <div>
                             <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Dari Tanggal Kalender</label>
                             <input type="date" id="report-date-start" onchange="generateReport()" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -345,6 +354,14 @@
                         <div>
                             <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Sampai Tanggal Kalender</label>
                             <input type="date" id="report-date-end" onchange="generateReport()" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Transaksi</label>
+                            <select id="report-transaction-type" onchange="generateReport()" class="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <option value="SEMUA">Barang Masuk & Keluar</option>
+                                <option value="MASUK">Barang Masuk</option>
+                                <option value="KELUAR">Barang Keluar</option>
+                            </select>
                         </div>
                         <div class="flex items-end">
                             <button onclick="generateReport()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-md shadow-indigo-100 flex items-center justify-center space-x-2">
@@ -363,7 +380,7 @@
                         <p id="rep-total-in" class="text-xs text-slate-500 mt-1 font-semibold">0 Unit Diterima</p>
                     </div>
                     <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nilai Barang Dikirim (Outbound)</p>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Uang Masuk Penjualan (Estimasi)</p>
                         <h3 id="rep-val-out" class="text-xl font-black text-amber-600 mt-1">Rp 0</h3>
                         <p id="rep-total-out" class="text-xs text-slate-500 mt-1 font-semibold">0 Unit Dikirim</p>
                     </div>
@@ -401,6 +418,7 @@
                                     <th class="py-3 px-3 border-r border-blue-200 text-center bg-blue-200/60">Jumlah Tersedia</th>
                                     <th class="py-3 px-3 border-r border-blue-200 text-center">Jumlah Diterima</th>
                                     <th class="py-3 px-3 border-r border-blue-200 text-center">Jumlah Dikirim</th>
+                                    <th class="py-3 px-3 border-r border-blue-200 text-right">Uang Masuk Penjualan</th>
                                     <th class="py-3 px-4 text-right">Total Nilai Asset</th>
                                 </tr>
                             </thead>
@@ -467,11 +485,11 @@
                 <p>Unduh laporan keuangan tersusun rapi atau impor data master dari Excel/Google Sheets.</p>
                 
                 <div class="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl space-y-3">
-                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">1. Export Laporan Keuangan Terstruktur (.CSV)</h4>
-                    <p class="text-xs text-slate-500">Hasil ekspor dilengkapi header formal, neraca ringkasan finansial, nilai aset stok, dan log transaksi terperinci.</p>
+                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">1. Export Laporan Keuangan Terstruktur (.XLSX)</h4>
+                    <p class="text-xs text-slate-500">Unduh laporan stok, mutasi, dan nilai aset dalam format workbook Excel.</p>
                     <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition flex items-center space-x-2">
                         <i class="fa-solid fa-download"></i>
-                        <span>Download Laporan Keuangan (.csv)</span>
+                        <span>Download Laporan Keuangan (.xlsx)</span>
                     </button>
                 </div>
 
@@ -576,6 +594,7 @@
             renderInventoryTable();
             renderTransactionsTable();
             populateQuickSelect();
+            generateReport();
         }
 
         function renderDashboardStats() {
@@ -645,12 +664,17 @@
 
         function renderTransactionsTable() {
             const tbody = document.getElementById('transactions-table-body');
-            if (transactions.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 italic">Belum ada riwayat transaksi barang masuk/keluar.</td></tr>`;
+            const selectedType = document.getElementById('transaction-type-filter').value;
+            const visibleTransactions = [...transactions].reverse().filter(t => selectedType === 'SEMUA' || t.type === selectedType);
+            if (visibleTransactions.length === 0) {
+                const message = transactions.length === 0
+                    ? 'Belum ada riwayat transaksi barang masuk/keluar.'
+                    : 'Tidak ada transaksi untuk pilihan ini.';
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 italic">${message}</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = [...transactions].reverse().map(t => {
+            tbody.innerHTML = visibleTransactions.map(t => {
                 const item = inventory.find(i => i.id === t.itemId);
                 const isMasuk = t.type === 'MASUK';
                 return `
@@ -762,30 +786,40 @@
             openModal('modal-confirm');
         }
 
-        // Calendar-based Financial Reports Generation
-        function generateReport() {
+        function getReportTransactions() {
             const startDate = document.getElementById('report-date-start').value;
             const endDate = document.getElementById('report-date-end').value;
-            const rangeLabel = document.getElementById('report-range-label');
-            const excelBanner = document.getElementById('excel-header-banner');
-
-            let filteredTx = transactions;
+            const transactionType = document.getElementById('report-transaction-type').value;
+            const filteredTx = transactions.filter(t =>
+                (!startDate || t.date >= startDate) &&
+                (!endDate || t.date <= endDate) &&
+                (transactionType === 'SEMUA' || t.type === transactionType)
+            );
             let periodText = 'Semua Waktu';
 
-            if(startDate && endDate) {
-                periodText = `Periode Tanggal ${startDate} s/d ${endDate}`;
-                filteredTx = transactions.filter(t => t.date >= startDate && t.date <= endDate);
-            } else if(startDate) {
-                periodText = `Periode Tanggal Mulai ${startDate}`;
-                filteredTx = transactions.filter(t => t.date >= startDate);
-            } else if(endDate) {
-                periodText = `Periode Sampai Tanggal ${endDate}`;
-                filteredTx = transactions.filter(t => t.date <= endDate);
+            if (startDate && endDate) periodText = `Periode Tanggal ${startDate} s/d ${endDate}`;
+            else if (startDate) periodText = `Periode Mulai ${startDate}`;
+            else if (endDate) periodText = `Periode Sampai ${endDate}`;
+
+            return { filteredTx, periodText, startDate, endDate, transactionType };
+        }
+
+        // Calendar-based Financial Reports Generation
+        function generateReport() {
+            const { filteredTx, periodText, startDate, endDate, transactionType } = getReportTransactions();
+            const rangeLabel = document.getElementById('report-range-label');
+            const excelBanner = document.getElementById('excel-header-banner');
+            if (startDate && endDate && startDate > endDate) {
+                rangeLabel.innerText = 'Tanggal awal tidak boleh melewati tanggal akhir';
+                rangeLabel.className = 'text-xs font-semibold text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-100';
+                return;
             }
 
-            rangeLabel.innerText = `Range Filter: ${periodText}`;
+            const transactionLabel = transactionType === 'SEMUA' ? 'Barang Masuk & Keluar' : transactionType === 'MASUK' ? 'Barang Masuk' : 'Barang Keluar';
+            rangeLabel.className = 'text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100';
+            rangeLabel.innerText = `Range Filter: ${periodText} | ${transactionLabel}`;
             if (excelBanner) {
-                excelBanner.innerText = `Laporan Stok & Keuangan Barang Gudang Lype&Co - ${periodText}`;
+                excelBanner.innerText = `Laporan Stok & Keuangan Barang Gudang Lype&Co - ${periodText} - ${transactionLabel}`;
             }
 
             const totalInQty = filteredTx.filter(t => t.type === 'MASUK').reduce((acc, t) => acc + t.qty, 0);
@@ -799,7 +833,7 @@
                 const itemPrice = item ? item.price : (t.price || 0);
                 if(t.type === 'MASUK') {
                     valIn += (t.qty * itemPrice);
-                } else {
+                } else if (t.type === 'KELUAR') {
                     valOut += (t.qty * itemPrice);
                 }
             });
@@ -829,7 +863,7 @@
             filteredTx.forEach(t => {
                 if(summaryMap[t.itemId]) {
                     if(t.type === 'MASUK') summaryMap[t.itemId].in += t.qty;
-                    else summaryMap[t.itemId].out += t.qty;
+                    else if(t.type === 'KELUAR') summaryMap[t.itemId].out += t.qty;
                 }
             });
 
@@ -837,7 +871,7 @@
             const summaryArr = Object.values(summaryMap);
 
             if(summaryArr.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400 italic">Belum ada data barang terdaftar di dalam sistem.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 italic">Belum ada data barang terdaftar di dalam sistem.</td></tr>`;
                 return;
             }
 
@@ -853,31 +887,26 @@
                         <td class="py-3 px-3 border-r border-slate-100 text-center font-bold text-slate-900 bg-slate-50">${s.stock}</td>
                         <td class="py-3 px-3 border-r border-slate-100 text-center font-bold text-blue-600">${s.in}</td>
                         <td class="py-3 px-3 border-r border-slate-100 text-center font-bold text-amber-600">${s.out}</td>
+                        <td class="py-3 px-3 border-r border-slate-100 text-right font-bold text-emerald-700">Rp ${(s.out * s.price).toLocaleString('id-ID')}</td>
                         <td class="py-3 px-4 text-right font-bold text-indigo-700">Rp ${totalValItem.toLocaleString('id-ID')}</td>
                     </tr>
                 `;
             }).join('');
         }
 
-        // Export to Neat & Organized Excel Spreadsheet (.CSV)
+        // Export the report as an Excel workbook.
         function exportToExcel() {
-            const startDate = document.getElementById('report-date-start').value || 'Semua Waktu';
-            const endDate = document.getElementById('report-date-end').value || 'Semua Waktu';
-            const periodStr = (startDate === 'Semua Waktu' && endDate === 'Semua Waktu') ? 'Semua Waktu' : `${startDate} s/d ${endDate}`;
-
-            let csv = "\uFEFF"; // UTF-8 BOM for proper Excel decoding
-            
-            // Spreadsheet Highlighted Title Bar
-            csv += `Laporan Stok Barang Gudang Lype&Co Periode ${periodStr}\r\n\r\n`;
-
-            // Table Column Headers
-            csv += "No.,Nama Barang,SKU,Harga Satuan (Rp),Jumlah Tersedia,Jumlah Diterima,Jumlah Dikirim,Total Nilai Asset (Rp)\r\n";
-
-            // Filter Transactions by Calendar Range
-            let filteredTx = transactions;
-            if(startDate !== 'Semua Waktu' && endDate !== 'Semua Waktu') {
-                filteredTx = transactions.filter(t => t.date >= startDate && t.date <= endDate);
+            if (typeof XLSX === 'undefined') {
+                showToast('Fitur Excel belum termuat. Periksa koneksi internet lalu coba lagi.', true);
+                return;
             }
+
+            const { filteredTx, periodText, startDate, endDate, transactionType } = getReportTransactions();
+            if (startDate && endDate && startDate > endDate) {
+                showToast('Tanggal awal tidak boleh melewati tanggal akhir.', true);
+                return;
+            }
+            const transactionLabel = transactionType === 'SEMUA' ? 'Barang Masuk & Keluar' : transactionType === 'MASUK' ? 'Barang Masuk' : 'Barang Keluar';
 
             const summaryMap = {};
             inventory.forEach(item => {
@@ -894,31 +923,45 @@
             filteredTx.forEach(t => {
                 if(summaryMap[t.itemId]) {
                     if(t.type === 'MASUK') summaryMap[t.itemId].in += t.qty;
-                    else summaryMap[t.itemId].out += t.qty;
+                    else if(t.type === 'KELUAR') summaryMap[t.itemId].out += t.qty;
                 }
             });
 
             const summaryArr = Object.values(summaryMap);
             let grandAssetVal = 0;
-
+            const rows = [
+                [`Laporan Stok & Keuangan Barang Gudang Lype&Co`],
+                [`Periode`, periodText],
+                [`Jenis Transaksi`, transactionLabel],
+                [],
+                ['No.', 'Nama Barang', 'SKU', 'Harga Satuan (Rp)', 'Jumlah Tersedia', 'Jumlah Diterima', 'Jumlah Dikirim', 'Uang Masuk Penjualan (Rp)', 'Total Nilai Aset (Rp)']
+            ];
             summaryArr.forEach((s, idx) => {
                 const totalAsset = s.stock * s.price;
                 grandAssetVal += totalAsset;
-                csv += `${idx + 1},"${s.name}","${s.sku}",${s.price},${s.stock},${s.in},${s.out},${totalAsset}\r\n`;
+                rows.push([idx + 1, s.name, s.sku, s.price, s.stock, s.in, s.out, s.out * s.price, totalAsset]);
             });
+            const totalSalesIncome = summaryArr.reduce((total, item) => total + item.out * item.price, 0);
+            rows.push([], ['', '', '', '', '', '', 'TOTAL UANG MASUK PENJUALAN', totalSalesIncome, ''], ['', '', '', '', '', '', '', 'TOTAL ASET', grandAssetVal]);
 
-            csv += `,,,,,TOTAL ASSET,,${grandAssetVal}\r\n`;
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Laporan_Stok_Gudang_LypeCo_${startDate}_sd_${endDate}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const worksheet = XLSX.utils.aoa_to_sheet(rows);
+            worksheet['!cols'] = [
+                { wch: 6 }, { wch: 28 }, { wch: 18 }, { wch: 20 },
+                { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 28 }, { wch: 24 }
+            ];
+            for (let rowIndex = 5; rowIndex < rows.length; rowIndex++) {
+                [3, 7, 8].forEach(columnIndex => {
+                    const cell = worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex })];
+                    if (cell && typeof cell.v === 'number') cell.z = '"Rp" #,##0';
+                });
+            }
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Laporan Gudang');
+            const fileStart = startDate || 'awal';
+            const fileEnd = endDate || 'akhir';
+            XLSX.writeFile(workbook, `Laporan_Stok_Gudang_LypeCo_${fileStart}_sd_${fileEnd}.xlsx`);
             
-            showToast("Laporan Excel/CSV Lype&Co berhasil di-export!");
+            showToast("Laporan Excel Lype&Co berhasil diunduh!");
             closeModal('modal-import');
         }
 
